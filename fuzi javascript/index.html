@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <style>
+            table {
+                border-collapse: collapse;
+                border: 2px black solid;
+                font: 12px sans-serif;
+            }
+
+            td,th {
+                border: 1px black solid;
+                padding: 5px;
+            }
+        </style>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="js/script.js" type="text/javascript"></script>
+        <script src="js/tabeltocsv.js" type="text/javascript"></script>
+    </head>
+    <body>
+        <table id='table'></table>
+        <button id="load">run</button>
+  
+        <script type="text/javascript">
+            function maxdefuzzi(a,b,c,d){
+                return Math.max(a[d],b[d],c[d]);
+            }
+
+            function defuzzi(data){
+                var r=[1,0.75,0.25,0,0,0,0,0,0,0];
+                var c=[0,0,0,0.25,0.5,1,0.5,0.25,0,0];
+                var a=[0,0,0,0,0,0,0,0.25,0.75,1];
+                var cell=data.split(",");
+                if (cell[11]<=0.25){
+                    a=[0,0,0,0,0,0,0,cell[11],cell[11],cell[11]];
+                }else if(cell[11]<=0.75){
+                    a=[0,0,0,0,0,0,0,0.25,cell[11],cell[11]];
+                }else{
+                    a=[0,0,0,0,0,0,0,0.25,0.75,cell[11]];
+                }
+
+                if (cell[10]<0.25){
+                    c=[0,0,0,cell[10],cell[10],cell[10],cell[10],cell[10],0,0];
+                }
+                else if (cell[10]<=0.5){
+                    c=[0,0,0,0.25,cell[10],cell[10],cell[10],0.25,0,0];
+                }else{
+                    c=[0,0,0,0.25,0.5,cell[10],0.5,0.25,0,0];
+                }
+
+
+                if (cell[9]<=0.25){
+                    r=[cell[9],cell[9],cell[9],0,0,0,0,0,0,0];
+                }else if(cell[9]<=0.75){
+                    r=[cell[9],cell[9],0.25,0,0,0,0,0,0,0];
+                }else{
+                    r=[cell[9],0.75,0.25,0,0,0,0,0,0,0];
+                }
+
+                var b=[maxdefuzzi(r,c,a,0),maxdefuzzi(r,c,a,1),maxdefuzzi(r,c,a,2),maxdefuzzi(r,c,a,3),maxdefuzzi(r,c,a,4),maxdefuzzi(r,c,a,5),maxdefuzzi(r,c,a,6),maxdefuzzi(r,c,a,7),maxdefuzzi(r,c,a,8),maxdefuzzi(r,c,a,9)];
+
+                var na = b[0]*5+b[1]*15+b[2]*25+b[3]*35+b[4]*45+b[5]*55+b[6]*65+b[7]*75+b[8]*85+b[9]*95;
+                var nb=b[0]+b[1]+b[2]+b[3]+b[4]+b[5]+b[6]+b[7]+b[8]+b[9];
+
+
+                //return ", "+b[0].toString()+", "+b[1].toString()+", "+b[2].toString()+", "+b[3].toString()+", "+b[4].toString()+", "+b[5].toString()+", "+b[6].toString()+", "+b[7].toString()+", "+b[8].toString()+", "+b[9].toString()+", "+(na/nb).toString()+", "+na.toString()+", "+nb.toString();
+                return ", "+(na/nb).toString();
+            }
+
+
+
+            function cari(x,a){
+                var bool=true;
+                var i=0;
+                while ((bool)&&(i<x.length)){
+                    if(x[i]==a) bool=false;
+                    i++
+                }
+                return bool;
+            }
+
+           
+            $(document).ready(function(){
+                var lowinc_a=0.3;
+                var lowinc_b=0.85;
+
+                var medinc_a=0.4;
+                var medinc_b=0.75;
+                var medinc_c=0.76;
+                var medinc_d=1.55;
+
+                var higinc_a=0.85;
+                var higinc_b=1.65;
+
+                var lowhut_a=26;
+                var lowhut_b=54;
+
+                var medhut_a=39;
+                var medhut_b=58;
+                var medhut_c=59;
+                var medhut_d=74;
+
+                var highut_a=53;
+                var highut_b=80;
+
+
+
+                var hasil=[];
+                $('#load').click(function(){
+                    $.ajax({
+                        url:"DataTugas2.csv",
+                        dataType:"text",
+                        success:function(d){
+                            var data =  d.split(/\r?\n|\r/);
+                            for (var i = 0; i<data.length; i++){
+                                if (i==0){
+                                    data[i]+=", low income, mid income, hight income, low hutang, mid hutang, hight hutang, rejected, considered, accepted, nilai";
+                                    //data[i]+=", , , , , , , , , , nilai";
+                                }else {
+                                    data[i]+=fuzzisation(data[i].split(",")[1],lowinc_a,lowinc_b,medinc_a,medinc_b,medinc_c,medinc_d,higinc_a,higinc_b,data[i].split(",")[2],lowhut_a,lowhut_b,medhut_a,medhut_b,medhut_c,medhut_d,highut_a,highut_b);
+                                    //data[i]+=fuzzi(data[i].split(",")[2],lowhut_a,lowhut_b,medhut_a,medhut_b,medhut_c,medhut_d,highut_a,highut_b);
+                                    data[i]+=inference(data[i]);
+                                    data[i]+=defuzzi(data[i]);
+                                }
+                                //var cell =  data[i].split(",");
+                                //var temp = '<tr><td>'+cell[0]+'</td><td>'+cell[1]+'</td><td>'+cell[2]+'</td><td>'+cell[3]+'</td><td>'+cell[4]+'</td><td>'+cell[5]+'</td><td bgcolor="#ff23ab" style="color:#000000">'+cell[6]+'</td><td>'+cell[7]+'</td><td>'+cell[8]+'</td><td>'+cell[9]+'</td><td>'+cell[10]+'</td><td>'+cell[11]+'</td><td>'+cell[12]+'</td><td>'+cell[13]+'</td><td>'+cell[14]+'</td><td>'+cell[15]+'</td><td>'+cell[16]+'</td><td>'+cell[17]+'</td><td>'+cell[18]+'</td><td>'+cell[19]+'</td><td>'+cell[20]+'</td><td>'+cell[21]+'</td><td>'+cell[22]+'</td><td>'+cell[23]+'</td><td>'+cell[24]+'</td></tr>';
+                                //var temp = '<tr><td>'+cell[0]+'</td><td>'+cell[1]+'</td><td>'+cell[2]+'</td><td>'+cell[12]+'</td></tr>';
+                                //$('#table').append(temp);
+                            }
+
+                            for (var i=1; i<data.length; i++){
+                                var max=0;
+                                var idx=0;
+                                for(var j=1; j<data.length; j++){
+                                    var cell=data[j].split(",");
+                                    if (i==1){
+                                        if (max<cell[12]) {
+                                            max=cell[12];
+                                            idx=j;
+                                        }
+                                    }else{
+                                        if (cari(hasil,j) && (max < cell[12])) {
+                                            max=cell[12];
+                                            idx=j;
+                                        }
+                                    }
+                                }   
+                                hasil.push(idx);
+                            }
+
+                            for (var i=0; i<20; i++){
+                                temp="<tr><td>"+hasil[i]+"</td><td>"+data[hasil[i]].split(",")[12]+"</td></tr>";
+                                $('#table').append(temp);
+                            }
+                            exportTableToCSV("TebakanTugas2.csv");
+                        }
+                    });
+                });
+            });
+        </script>
+    </body>
+</html>
